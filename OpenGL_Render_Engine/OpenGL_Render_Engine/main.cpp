@@ -8,17 +8,18 @@
 #include "application/Application.h"
 #include "glframework/texture.h"
 #include "camera/orthographicCamera.h"
+#include "camera/perspectiveCamera.h"
+#include "cameraControl/gameCameraControl.h"
 
 
 GLuint vao;
 Shader* shader = nullptr;
 Texture* texture = nullptr;
 glm::mat4 transform(1.0f);
-glm::mat4 viewMatrix(1.0f);
-glm::mat4 perspectiveMatrix(1.0f);
 float size = 6.0f;
-Camera* camera = new OrthographicCamera(-size, size, size, -size, size, -size);
+Camera* camera = nullptr;
 
+GameCameraControl* cameraControl = nullptr;
 
 void OnResize(int width, int height) {
 	GL_CALL(glViewport(0, 0, width, height));
@@ -26,8 +27,29 @@ void OnResize(int width, int height) {
 }
 
 void OnKey(int key, int action, int mods) {
-	std::cout << key << std::endl;
+	if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
+		app->setWindowShouldClose();
+
+	cameraControl->onKey(key, action, mods);
 }
+
+//鼠标按下/抬起
+void OnMouse(int button, int action, int mods) {
+	double x, y;
+	app->getCursorPosition(&x, &y);
+	cameraControl->onMouse(button, action, x, y);
+}
+
+//鼠标移动
+void OnCursor(double xpos, double ypos) {
+	cameraControl->onCursor(xpos, ypos);
+}
+
+//鼠标滚轮
+void OnScroll(double offset) {
+	cameraControl->onScroll(offset);
+}
+
 
 void prepareVAO() {
 	//1 准备positions colors
@@ -114,14 +136,19 @@ void prepareTexture() {
 }
 
 void prepareCamera() {
-
-	viewMatrix = camera->getViewMatrix();
+	float size = 6.0f;
+	//camera = new OrthographicCamera(-size, size, size, -size, size, -size);
+	camera = new PerspectiveCamera(
+		60.0f,
+		(float)app->getWidth() / (float)app->getHeight(),
+		0.1f,
+		1000.0f
+	);
+	cameraControl = new GameCameraControl();
+	cameraControl->setCamera(camera);
+	cameraControl->setSensitivity(0.4f);
 }
 
-void preparePerspective() {
-
-	perspectiveMatrix = camera->getProjectionMatrix();
-}
 
 void render() {
 	//执行opengl画布清理操作
@@ -131,8 +158,8 @@ void render() {
 	shader->begin();
 	shader->setInt("sampler", 0);
 	shader->setMatrix4x4("transform", transform);
-	shader->setMatrix4x4("viewMatrix", viewMatrix);
-	shader->setMatrix4x4("projectionMatrix", perspectiveMatrix);
+	shader->setMatrix4x4("viewMatrix", camera->getViewMatrix());
+	shader->setMatrix4x4("projectionMatrix", camera->getProjectionMatrix());
  
 	//绑定当前的vao
 	GL_CALL(glBindVertexArray(vao));
@@ -152,6 +179,9 @@ int main() {
 
 	app->setResizeCallback(OnResize);
 	app->setKeyBoardCallback(OnKey);
+	app->setMouseCallback(OnMouse);
+	app->setCursorCallback(OnCursor);
+	app->setScrollCallback(OnScroll);
 
 	//设置opengl视口以及清理颜色
 	GL_CALL(glViewport(0, 0, 800, 600));
@@ -161,9 +191,10 @@ int main() {
 	prepareVAO();
 	prepareTexture();
 	prepareCamera();
-	preparePerspective();
 
 	while (app->update()) {
+		cameraControl->update();
+
 		render();
 	}
 

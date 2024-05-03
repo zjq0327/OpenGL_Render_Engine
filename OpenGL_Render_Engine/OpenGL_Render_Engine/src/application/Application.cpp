@@ -49,7 +49,8 @@ bool Application::init(const int& width, const int& height) {
 		std::cout << "Failed to initialize GLAD" << std::endl;
 		return false;
 	}
-	
+	//glfwSetInputMode(mWindow, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+
 	glfwSetFramebufferSizeCallback(mWindow, frameBufferSizeCallback);
 
 	//this就是当前全局唯一的Application对象
@@ -57,6 +58,15 @@ bool Application::init(const int& width, const int& height) {
 
 	//键盘响应
 	glfwSetKeyCallback(mWindow, keyCallback);
+
+	//鼠标点击事件响应
+	glfwSetMouseButtonCallback(mWindow, mouseCallback);
+
+	//鼠标移动事件响应
+	glfwSetCursorPosCallback(mWindow, cursorCallback);
+
+	//鼠标滚轮消息
+	glfwSetScrollCallback(mWindow, scrollCallback);
 
 	return true;
 }
@@ -82,6 +92,14 @@ void Application::destroy() {
 	glfwTerminate();
 }
 
+void Application::setWindowShouldClose() {
+	glfwSetWindowShouldClose(mWindow, GL_TRUE);
+}
+
+void Application::getCursorPosition(double* x, double* y) {
+	glfwGetCursorPos(mWindow, x, y);
+}
+
 
 void Application::frameBufferSizeCallback(GLFWwindow* window, int width, int height) {
 	std::cout << "Resize" << std::endl;
@@ -91,14 +109,37 @@ void Application::frameBufferSizeCallback(GLFWwindow* window, int width, int hei
 		self->mResizeCallback(width, height);
 	}
 
-	//if (Application::getInstance()->mResizeCallback != nullptr) {
-	//	Application::getInstance()->mResizeCallback(width, height);
-	//}
 }
 
 void Application::keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
 	Application* self = (Application*)glfwGetWindowUserPointer(window);
 	if (self->mKeyBoardCallback != nullptr) {
-		self->mKeyBoardCallback(key, action, mods);
+  		self->mKeyBoardCallback(key, action, mods);
 	}
+}
+
+
+void Application::mouseCallback(GLFWwindow* window, int button, int action, int mods) {
+	Application* self = (Application*)glfwGetWindowUserPointer(window);
+	if (self->mMouseCallback != nullptr) {
+		self->mMouseCallback(button, action, mods);
+	}
+
+}
+
+void Application::cursorCallback(GLFWwindow* window, double xpos, double ypos) {
+	Application* self = (Application*)glfwGetWindowUserPointer(window);
+	if (self->mCursorCallback != nullptr) {
+		self->mCursorCallback(xpos, ypos);
+	}
+
+}
+
+//滚动消息的xoffset没用
+void Application::scrollCallback(GLFWwindow* window, double xoffset, double yoffset) {
+	Application* self = (Application*)glfwGetWindowUserPointer(window);
+	if (self->mScrollCallback != nullptr) {
+		self->mScrollCallback(yoffset);
+	}
+
 }
