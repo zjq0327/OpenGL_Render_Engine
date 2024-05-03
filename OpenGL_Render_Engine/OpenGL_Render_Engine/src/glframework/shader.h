@@ -2,6 +2,7 @@
 
 #include "core.h"
 #include<string>
+#include <assimp/scene.h>
 
 class Shader {
 public:
@@ -12,17 +13,21 @@ public:
 
 	void end();//结束使用当前Shader
 
-	void setFloat(const std::string& name, float value);
 
-	void setVector3(const std::string& name, float x, float y, float z);
-	void setVector3(const std::string& name, const float* values);
 
+	// uniform functions
+	void setBool(const std::string& name, bool value);
 	void setInt(const std::string& name, int value);
+	void setFloat(const std::string& name, float value);
+	void set3Float(const std::string& name, float v1, float v2, float v3);
+	void set3Float(const std::string& name, glm::vec3 v);
+	void set4Float(const std::string& name, float v1, float v2, float v3, float v4);
+	void set4Float(const std::string& name, aiColor4D color);
+	void set4Float(const std::string& name, glm::vec4 v);
+	void setMat4(const std::string& name, glm::mat4 val);
 
-	void setMatrix4x4(const std::string& name, glm::mat4 value);
 private:
-	//shader program
-	//type:COMPILE LINK
+
 	void checkShaderErrors(GLuint target,std::string type);
 
 private:

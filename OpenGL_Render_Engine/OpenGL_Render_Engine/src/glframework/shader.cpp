@@ -89,53 +89,6 @@ void Shader::end() {
 	GL_CALL(glUseProgram(0));
 }
 
-void Shader::setFloat(const std::string& name, float value) {
-	//1 通过名称拿到Uniform变量的位置Location
-	GLint location = GL_CALL(glGetUniformLocation(mProgram, name.c_str()));
-
-	//2 通过Location更新Uniform变量的值
-	GL_CALL(glUniform1f(location, value));
-}
-
-void Shader::setVector3(const std::string& name, float x, float y, float z) {
-	//1 通过名称拿到Uniform变量的位置Location
-	GLint location = GL_CALL(glGetUniformLocation(mProgram, name.c_str()));
-	
-	//2 通过Location更新Uniform变量的值
-	GL_CALL(glUniform3f(location, x, y, z));
-}
-
-//重载 overload
-void Shader::setVector3(const std::string& name, const float* values) {
-	//1 通过名称拿到Uniform变量的位置Location
-	GLint location = GL_CALL(glGetUniformLocation(mProgram, name.c_str()));
-
-	//2 通过Location更新Uniform变量的值
-	//第二个参数：你当前要更新的uniform变量如果是数组，数组里面包括多少个向量vec3
-	GL_CALL(glUniform3fv(location, 1, values));
-}
-
-void Shader::setInt(const std::string& name, int value) {
-	//1 通过名称拿到Uniform变量的位置Location
-	GLint location = GL_CALL(glGetUniformLocation(mProgram, name.c_str()));
-
-	//2 通过Location更新Uniform变量的值
-	glUniform1i(location, value);
-}
-
-void Shader::setMatrix4x4(const std::string& name, glm::mat4 value) {
-	//1 通过名称拿到Uniform变量的位置Location
-	GLint location = GL_CALL(glGetUniformLocation(mProgram, name.c_str()));
-	
-	//2 通过Location更新Uniform变量的值
-	//transpose参数：表示是否对传输进去的矩阵数据进行转置
-	glUniformMatrix4fv(location, 1, GL_FALSE, glm::value_ptr(value));
-}
-
-
-
-
-
 void Shader::checkShaderErrors(GLuint target, std::string type) {
 	int success = 0;
 	char infoLog[1024];
@@ -157,4 +110,41 @@ void Shader::checkShaderErrors(GLuint target, std::string type) {
 	else {
 		std::cout << "Error: Check shader errors Type is wrong" << std::endl;
 	}
+}
+
+
+void Shader::setBool(const std::string& name, bool value) {
+	glUniform1i(glGetUniformLocation(mProgram, name.c_str()), (int)value);
+}
+
+void Shader::setInt(const std::string& name, int value) {
+	glUniform1i(glGetUniformLocation(mProgram, name.c_str()), value);
+}
+
+void Shader::setFloat(const std::string& name, float value) {
+	glUniform1f(glGetUniformLocation(mProgram, name.c_str()), value);
+}
+
+void Shader::set3Float(const std::string& name, float v1, float v2, float v3) {
+	glUniform3f(glGetUniformLocation(mProgram, name.c_str()), v1, v2, v3);
+}
+
+void Shader::set3Float(const std::string& name, glm::vec3 v) {
+	glUniform3f(glGetUniformLocation(mProgram, name.c_str()), v.x, v.y, v.z);
+}
+
+void Shader::set4Float(const std::string& name, float v1, float v2, float v3, float v4) {
+	glUniform4f(glGetUniformLocation(mProgram, name.c_str()), v1, v2, v3, v4);
+}
+
+void Shader::set4Float(const std::string& name, aiColor4D color) {
+	glUniform4f(glGetUniformLocation(mProgram, name.c_str()), color.r, color.g, color.b, color.a);
+}
+
+void Shader::set4Float(const std::string& name, glm::vec4 v) {
+	glUniform4f(glGetUniformLocation(mProgram, name.c_str()), v.x, v.y, v.z, v.w);
+}
+
+void Shader::setMat4(const std::string& name, glm::mat4 val) {
+	glUniformMatrix4fv(glGetUniformLocation(mProgram, name.c_str()), 1, GL_FALSE, glm::value_ptr(val));
 }
