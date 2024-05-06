@@ -6,21 +6,21 @@
 #include <assert.h>//断言
 #include "wrapper/checkError.h"
 #include "application/Application.h"
-#include "glframework/texture.h"
 #include "camera/orthographicCamera.h"
 #include "camera/perspectiveCamera.h"
 #include "cameraControl/gameCameraControl.h"
 
+#include"objects/model.h"
+#include"objects/models/lamp.hpp"
+
 
 GLuint vao;
 Shader* shader = nullptr;
-Texture* texture = nullptr;
 glm::mat4 transform(1.0f);
 float size = 6.0f;
 Camera* camera = nullptr;
 
 GameCameraControl* cameraControl = nullptr;
-
 void OnResize(int width, int height) {
 	GL_CALL(glViewport(0, 0, width, height));
 	std::cout << "OnResize" << std::endl;
@@ -51,89 +51,6 @@ void OnScroll(double offset) {
 }
 
 
-void prepareVAO() {
-	//1 准备positions colors
-	/*float positions[] = {
-		-0.5f, -0.5f, 0.0f,
-		0.5f, -0.5f, 0.0f,
-		0.0f,  0.5f, 0.0f,
-	};*/
-	float positions[] = {
-		-1.0f, 0.0f, 0.0f,
-		1.0f, 0.0f, 0.0f,
-		0.0f,  1.0f, 0.0f,
-	};
-
-
-	float colors[] = {
-		1.0f, 0.0f,0.0f,
-		0.0f, 1.0f,0.0f,
-		0.0f, 0.0f,1.0f,
-	};
-
-	float uvs[] = {
-		0.0f, 0.0f,
-		1.0f, 0.0f,
-		0.5f, 1.0f,
-	};
-
-	unsigned int indices[] = {
-		0, 1, 2,
-	};
-
-	//2 VBO创建
-	GLuint posVbo, colorVbo, uvVbo;
-	glGenBuffers(1, &posVbo);
-	glBindBuffer(GL_ARRAY_BUFFER, posVbo);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(positions), positions, GL_STATIC_DRAW);
-
-	glGenBuffers(1, &colorVbo);
-	glBindBuffer(GL_ARRAY_BUFFER, colorVbo);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(colors), colors, GL_STATIC_DRAW);
-
-	glGenBuffers(1, &uvVbo);
-	glBindBuffer(GL_ARRAY_BUFFER, uvVbo);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(uvs), uvs, GL_STATIC_DRAW);
-
-	//3 EBO创建
-	GLuint ebo;
-	glGenBuffers(1, &ebo);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
-
-	//4 VAO创建
-	glGenVertexArrays(1, &vao);
-	glBindVertexArray(vao);
-
-	//5 绑定vbo ebo 加入属性描述信息
-	//5.1 加入位置属性描述信息
-	glBindBuffer(GL_ARRAY_BUFFER, posVbo);
-	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 3, (void*)0);
-
-	//5.2 加入颜色属性描述数据
-	glBindBuffer(GL_ARRAY_BUFFER, colorVbo);
-	glEnableVertexAttribArray(1);
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 3, (void*)0);
-
-	//5.3 加入uv属性描述数据
-	glBindBuffer(GL_ARRAY_BUFFER, uvVbo);
-	glEnableVertexAttribArray(2);
-	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 2, (void*)0);
-
-	//5.4 加入ebo到当前的vao
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
-
-	glBindVertexArray(0);
-}
-
-void prepareShader() {
-	shader = new Shader("assets/shaders/vertex.glsl","assets/shaders/fragment.glsl");
-}
-
-void prepareTexture() {
-	texture = new Texture("assets/textures/goku.jpg", 0);
-}
 
 void prepareCamera() {
 	float size = 6.0f;
@@ -150,26 +67,6 @@ void prepareCamera() {
 }
 
 
-void render() {
-	//执行opengl画布清理操作
-	GL_CALL(glClear(GL_COLOR_BUFFER_BIT));
-
-	//绑定当前的program
-	shader->begin();
-	shader->setInt("sampler", 0);
-	shader->setMatrix4x4("transform", transform);
-	shader->setMatrix4x4("viewMatrix", camera->getViewMatrix());
-	shader->setMatrix4x4("projectionMatrix", camera->getProjectionMatrix());
- 
-	//绑定当前的vao
-	GL_CALL(glBindVertexArray(vao));
-
-	//发出绘制指令
-	GL_CALL(glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, 0));
-	GL_CALL(glBindVertexArray(0));
-
-	shader->end();
-}
 
 
 int main() {
@@ -187,15 +84,78 @@ int main() {
 	GL_CALL(glViewport(0, 0, 800, 600));
 	GL_CALL(glClearColor(0.2f, 0.3f, 0.3f, 1.0f));
 
-	prepareShader();
-	prepareVAO();
-	prepareTexture();
+
 	prepareCamera();
+
+
+	// SHADERS===============================
+	Shader shader("assets/shaders/phongshaders/vertex.glsl", "assets/shaders/phongshaders/fragment.glsl");
+	Shader lampShader("assets/shaders/lightshaders/vertex.glsl", "assets/shaders/lightshaders/fragment.glsl");
+
+	// MODELS==============================
+	Model m(glm::vec3(0.0f, -2.0f, -5.0f), glm::vec3(0.05f), true);
+	m.loadModel("assets/models/mary/Marry.obj");
+
+	// LIGHTS
+	DirLight dirLight = { glm::vec3(-0.2f, -1.0f, -0.3f), glm::vec4(0.1f, 0.1f, 0.1f, 1.0f), glm::vec4(0.4f, 0.4f, 0.4f, 1.0f), glm::vec4(0.5f, 0.5f, 0.5f, 1.0f) };
+
+	glm::vec3 pointLightPositions[] = {
+		glm::vec3(0.7f,  0.2f,  2.0f),
+		glm::vec3(2.3f, -3.3f, -4.0f),
+		glm::vec3(-4.0f,  2.0f, -12.0f),
+		glm::vec3(0.0f,  0.0f, -3.0f)
+	};
+	Lamp lamps[4];
+	for (unsigned int i = 0; i < 4; i++) {
+		lamps[i] = Lamp(glm::vec3(1.0f),
+			glm::vec4(0.05f, 0.05f, 0.05f, 1.0f), glm::vec4(0.8f, 0.8f, 0.8f, 1.0f), glm::vec4(1.0f),
+			1.0f, 0.07f, 0.032f,
+			pointLightPositions[i], glm::vec3(0.25f));
+		lamps[i].init();
+	}
+
+	SpotLight s = {
+		camera->mPosition, camera->mRight,
+		glm::cos(glm::radians(12.5f)), glm::cos(glm::radians(20.0f)),
+		1.0f, 0.07f, 0.032f,
+		glm::vec4(0.0f, 0.0f, 0.0f, 1.0f), glm::vec4(1.0f), glm::vec4(1.0f)
+	};
+
+
 
 	while (app->update()) {
 		cameraControl->update();
 
-		render();
+		shader.begin();
+
+		shader.set3Float("viewPos", camera->mPosition);
+
+		dirLight.render(shader);
+
+		for (unsigned int i = 0; i < 4; i++) {
+			lamps[i].pointLight.render(shader, i);
+		}
+		shader.setInt("noPointLights", 4);
+
+		
+		shader.setInt("noSpotLights", 0);
+
+
+		shader.setMat4("view", camera->getViewMatrix());
+		shader.setMat4("projection", camera->getProjectionMatrix());
+
+		m.render(shader);
+
+		lampShader.begin();
+		lampShader.setMat4("view", camera->getViewMatrix());
+		lampShader.setMat4("projection", camera->getProjectionMatrix());
+
+		for (unsigned int i = 0; i < 4; i++) {
+			lamps[i].render(lampShader);
+		}
+
+
+
 	}
 
 	app->destroy();
